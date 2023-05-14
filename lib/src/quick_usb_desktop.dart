@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:libusb/libusb64.dart';
+import 'package:libusb/libusb.dart';
 import 'package:quick_usb/src/common.dart';
 
 import 'quick_usb_platform_interface.dart';
@@ -83,7 +83,8 @@ class _QuickUsbDesktop extends QuickUsbPlatform {
   }
 
   @override
-  Future<List<UsbDeviceDescription>> getDevicesWithDescription({bool requestPermission = true}) async {
+  Future<List<UsbDeviceDescription>> getDevicesWithDescription(
+      {bool requestPermission = true}) async {
     var devices = await getDeviceList();
     var result = <UsbDeviceDescription>[];
     for (var device in devices) {
@@ -93,7 +94,8 @@ class _QuickUsbDesktop extends QuickUsbPlatform {
   }
 
   @override
-  Future<UsbDeviceDescription> getDeviceDescription(UsbDevice usbDevice, {bool requestPermission = true}) async {
+  Future<UsbDeviceDescription> getDeviceDescription(UsbDevice usbDevice,
+      {bool requestPermission = true}) async {
     String? manufacturer;
     String? product;
     String? serialNumber;
@@ -197,7 +199,7 @@ class _QuickUsbDesktop extends QuickUsbPlatform {
         id: configDescPtr.ref.bConfigurationValue,
         index: configDescPtr.ref.iConfiguration,
         interfaces: _iterateInterface(
-                configDescPtr.ref.interface_1, configDescPtr.ref.bNumInterfaces)
+                configDescPtr.ref.interface1, configDescPtr.ref.bNumInterfaces)
             .toList(),
       );
       _libusb.libusb_free_config_descriptor(configDescPtr);
@@ -279,13 +281,13 @@ class _QuickUsbDesktop extends QuickUsbPlatform {
     assert(endpoint.direction == UsbEndpoint.DIRECTION_IN,
         'Endpoint\'s direction should be in');
 
-    var actualLengthPtr = ffi.calloc<Int32>();
+    var actualLengthPtr = ffi.calloc<Int>();
     var dataPtr = ffi.calloc<Uint8>(maxLength);
     try {
       var result = _libusb.libusb_bulk_transfer(
         _devHandle!,
         endpoint.endpointAddress,
-        dataPtr,
+        dataPtr.cast<UnsignedChar>(),
         maxLength,
         actualLengthPtr,
         timeout,
@@ -308,14 +310,14 @@ class _QuickUsbDesktop extends QuickUsbPlatform {
     assert(endpoint.direction == UsbEndpoint.DIRECTION_OUT,
         'Endpoint\'s direction should be out');
 
-    var actualLengthPtr = ffi.calloc<Int32>();
+    var actualLengthPtr = ffi.calloc<Int>();
     var dataPtr = ffi.calloc<Uint8>(data.length);
     dataPtr.asTypedList(data.length).setAll(0, data);
     try {
       var result = _libusb.libusb_bulk_transfer(
         _devHandle!,
         endpoint.endpointAddress,
-        dataPtr,
+        dataPtr.cast<UnsignedChar>(),
         data.length,
         actualLengthPtr,
         timemout,
