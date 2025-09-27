@@ -16,14 +16,29 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 private const val ACTION_USB_PERMISSION = "com.example.quick_usb.USB_PERMISSION"
 
-private val pendingIntentFlag =
-  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-  } else {
-    PendingIntent.FLAG_UPDATE_CURRENT
+private fun getPendingIntentFlag(): Int {
+  return when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+      // Android 14+ requires FLAG_MUTABLE for USB permissions to work properly
+      PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    }
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+      // Android 6-13 can use FLAG_IMMUTABLE safely
+      PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    }
+    else -> {
+      // Older versions use basic flags
+      PendingIntent.FLAG_UPDATE_CURRENT
+    }
   }
+}
 
-private fun pendingPermissionIntent(context: Context) = PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION), pendingIntentFlag)
+private fun pendingPermissionIntent(context: Context): PendingIntent {
+  val intent = Intent(ACTION_USB_PERMISSION).apply {
+    setPackage(context.packageName)
+  }
+  return PendingIntent.getBroadcast(context, 0, intent, getPendingIntentFlag())
+}
 
 /** QuickUsbPlugin */
 class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {

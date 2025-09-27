@@ -27,7 +27,7 @@ apply plugin: 'kotlin-android'
 android {
     namespace 'com.example.quick_usb'
 
-    compileSdkVersion 35
+    compileSdkVersion 36
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
@@ -43,6 +43,7 @@ android {
     }
     defaultConfig {
         minSdkVersion 24
+        targetSdkVersion 36
     }
 }
 
