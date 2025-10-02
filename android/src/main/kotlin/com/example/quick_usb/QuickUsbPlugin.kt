@@ -114,7 +114,11 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
               ))
             }
           }
-          context.registerReceiver(permissionReceiver, IntentFilter(ACTION_USB_PERMISSION))
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(permissionReceiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
+          } else {
+            context.registerReceiver(permissionReceiver, IntentFilter(ACTION_USB_PERMISSION))
+          }
           manager.requestPermission(device, pendingPermissionIntent(context))
         } else {
           result.success(mapOf(
@@ -136,7 +140,11 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val identifier = call.argument<String>("identifier")
         val device = manager.deviceList[identifier]
         if (!manager.hasPermission(device)) {
-          context.registerReceiver(receiver, IntentFilter(ACTION_USB_PERMISSION))
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
+          } else {
+            context.registerReceiver(receiver, IntentFilter(ACTION_USB_PERMISSION))
+          }
           manager.requestPermission(device, pendingPermissionIntent(context))
         }
         result.success(null)
