@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required for External Accessory framework -->
+    <key>UISupportedExternalAccessoryProtocols</key>
+    <array>
+        <!-- Example protocol strings - replace with your device's actual protocols -->
+        <string>com.apple.mfi</string>
+        <string>com.yourcompany.usbdevice</string>
+        <string>com.example.serial</string>
+    </array>
+    
+    <!-- Optional: External Accessory usage description -->
+    <key>NSExternalAccessoryUsageDescription</key>
+    <string>This app needs access to USB devices for data communication.</string>
+    
+    <!-- Required for iOS 14+ -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>This app may use local network for USB device communication.</string>
+</dict>
+</plist>

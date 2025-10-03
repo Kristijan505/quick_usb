@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'src/common.dart';
 import 'src/quick_usb_android.dart';
 import 'src/quick_usb_desktop.dart';
+import 'src/quick_usb_ios.dart';
 import 'src/quick_usb_platform_interface.dart';
 
 export 'src/common.dart';
@@ -19,6 +20,8 @@ QuickUsbPlatform get _platform {
     // with a non-default instance.
     if (Platform.isAndroid) {
       QuickUsbPlatform.instance = QuickUsbAndroid();
+    } else if (Platform.isIOS) {
+      QuickUsbPlatform.instance = QuickUsbIOS();
     } else if (Platform.isWindows) {
       QuickUsbPlatform.instance = QuickUsbWindows();
     } else if (Platform.isMacOS) {
@@ -51,11 +54,10 @@ class QuickUsb {
   static Future<UsbDeviceDescription> getDeviceDescription(
     UsbDevice usbDevice, {
     bool requestPermission = true,
-  }) =>
-      _platform.getDeviceDescription(
-        usbDevice,
-        requestPermission: requestPermission,
-      );
+  }) => _platform.getDeviceDescription(
+    usbDevice,
+    requestPermission: requestPermission,
+  );
 
   static Future<bool> hasPermission(UsbDevice usbDevice) =>
       _platform.hasPermission(usbDevice);
@@ -83,13 +85,17 @@ class QuickUsb {
   static Future<bool> releaseInterface(UsbInterface intf) =>
       _platform.releaseInterface(intf);
 
-  static Future<Uint8List> bulkTransferIn(UsbEndpoint endpoint, int maxLength,
-          {int timeout = 1000}) =>
-      _platform.bulkTransferIn(endpoint, maxLength, timeout);
+  static Future<Uint8List> bulkTransferIn(
+    UsbEndpoint endpoint,
+    int maxLength, {
+    int timeout = 1000,
+  }) => _platform.bulkTransferIn(endpoint, maxLength, timeout);
 
-  static Future<int> bulkTransferOut(UsbEndpoint endpoint, Uint8List data,
-          {int timeout = 5000}) =>
-      _platform.bulkTransferOut(endpoint, data, timeout);
+  static Future<int> bulkTransferOut(
+    UsbEndpoint endpoint,
+    Uint8List data, {
+    int timeout = 5000,
+  }) => _platform.bulkTransferOut(endpoint, data, timeout);
 
   static Future<void> setAutoDetachKernelDriver(bool enable) =>
       _platform.setAutoDetachKernelDriver(enable);

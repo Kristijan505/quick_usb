@@ -166,7 +166,7 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val device = usbDevice ?: return result.error("IllegalState", "usbDevice null", null)
         val index = call.argument<Int>("index")!!
         val configuration = device.getConfiguration(index)
-        val map = configuration.toMap() + ("index" to index)
+        val map = configuration.toUsbMap() + ("index" to index)
         result.success(map)
       }
       "setConfiguration" -> {
@@ -181,7 +181,7 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val connection = usbDeviceConnection ?: return result.error("IllegalState", "usbDeviceConnection null", null)
         val id = call.argument<Int>("id")!!
         val alternateSetting = call.argument<Int>("alternateSetting")!!
-        val usbInterface = device.findInterface(id, alternateSetting)
+        val usbInterface = device.findUsbInterface(id, alternateSetting)
         result.success(connection.claimInterface(usbInterface, true))
       }
       "releaseInterface" -> {
@@ -189,7 +189,7 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val connection = usbDeviceConnection ?: return result.error("IllegalState", "usbDeviceConnection null", null)
         val id = call.argument<Int>("id")!!
         val alternateSetting = call.argument<Int>("alternateSetting")!!
-        val usbInterface = device.findInterface(id, alternateSetting)
+        val usbInterface = device.findUsbInterface(id, alternateSetting)
         result.success(connection.releaseInterface(usbInterface))
       }
       "bulkTransferIn" -> {
@@ -202,11 +202,11 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val endpointMap = call.argument<Map<String, Any>>("endpoint")!!
         val maxLength = call.argument<Int>("maxLength")!!
         val endpoint =
-          device.findEndpoint(endpointMap["endpointNumber"] as Int, endpointMap["direction"] as Int)
+          device.findUsbEndpoint(endpointMap["endpointNumber"] as Int, endpointMap["direction"] as Int)
         val timeout = call.argument<Int>("timeout")!!
 
         // TODO Check [UsbDeviceConnection.bulkTransfer] API >= 28
-        require(maxLength <= UsbRequest__MAX_USBFS_BUFFER_SIZE) { "Before 28, a value larger than 16384 bytes would be truncated down to 16384" }
+        require(maxLength <= MAX_USBFS_BUFFER_SIZE) { "Before 28, a value larger than 16384 bytes would be truncated down to 16384" }
         val buffer = ByteArray(maxLength)
         val actualLength = connection.bulkTransfer(endpoint, buffer, buffer.count(), timeout)
         if (actualLength < 0) {
@@ -226,11 +226,11 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
         val data = call.argument<ByteArray>("data")!!
         val timeout = call.argument<Int>("timeout")!!
         val endpoint =
-          device.findEndpoint(endpointMap["endpointNumber"] as Int, endpointMap["direction"] as Int)
+          device.findUsbEndpoint(endpointMap["endpointNumber"] as Int, endpointMap["direction"] as Int)
 
         // TODO Check [UsbDeviceConnection.bulkTransfer] API >= 28
         val dataSplit = data.asList()
-          .windowed(UsbRequest__MAX_USBFS_BUFFER_SIZE, UsbRequest__MAX_USBFS_BUFFER_SIZE, true)
+          .windowed(MAX_USBFS_BUFFER_SIZE, MAX_USBFS_BUFFER_SIZE, true)
           .map { it.toByteArray() }
         var sum: Int? = null
         for (bytes in dataSplit) {
@@ -249,8 +249,8 @@ class QuickUsbPlugin : FlutterPlugin, MethodCallHandler {
   }
 }
 
-fun UsbDevice.findInterface(id: Int, alternateSetting: Int): UsbInterface? {
-  for (i in 0..interfaceCount) {
+fun UsbDevice.findUsbInterface(id: Int, alternateSetting: Int): UsbInterface? {
+  for (i in 0 until interfaceCount) {
     val usbInterface = getInterface(i)
     if (usbInterface.id == id && usbInterface.alternateSetting == alternateSetting) {
       return usbInterface
@@ -259,10 +259,10 @@ fun UsbDevice.findInterface(id: Int, alternateSetting: Int): UsbInterface? {
   return null
 }
 
-fun UsbDevice.findEndpoint(endpointNumber: Int, direction: Int): UsbEndpoint? {
-  for (i in 0..interfaceCount) {
+fun UsbDevice.findUsbEndpoint(endpointNumber: Int, direction: Int): UsbEndpoint? {
+  for (i in 0 until interfaceCount) {
     val usbInterface = getInterface(i)
-    for (j in 0..usbInterface.endpointCount) {
+    for (j in 0 until usbInterface.endpointCount) {
       val endpoint = usbInterface.getEndpoint(j)
       if (endpoint.endpointNumber == endpointNumber && endpoint.direction == direction) {
         return endpoint
@@ -272,21 +272,21 @@ fun UsbDevice.findEndpoint(endpointNumber: Int, direction: Int): UsbEndpoint? {
   return null
 }
 
-/** [UsbRequest.MAX_USBFS_BUFFER_SIZE] */
-val UsbRequest__MAX_USBFS_BUFFER_SIZE = 16384
+/** Maximum USBFS buffer size for bulk transfers */
+private const val MAX_USBFS_BUFFER_SIZE = 16384
 
-fun UsbConfiguration.toMap() = mapOf(
+fun UsbConfiguration.toUsbMap() = mapOf(
   "id" to id,
-  "interfaces" to List(interfaceCount) { getInterface(it).toMap() }
+  "interfaces" to List<Map<String, Any>>(interfaceCount) { getInterface(it).toUsbMap() }
 )
 
-fun UsbInterface.toMap() = mapOf(
+fun UsbInterface.toUsbMap() = mapOf(
   "id" to id,
   "alternateSetting" to alternateSetting,
-  "endpoints" to List(endpointCount) { getEndpoint(it).toMap() }
+  "endpoints" to List<Map<String, Int>>(endpointCount) { getEndpoint(it).toUsbMap() }
 )
 
-fun UsbEndpoint.toMap() = mapOf(
+fun UsbEndpoint.toUsbMap() = mapOf(
         "endpointNumber" to endpointNumber,
         "direction" to direction
 )
